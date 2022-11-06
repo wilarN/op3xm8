@@ -51,13 +51,15 @@ def read_from_json(json_path: str):
 
 global interfaceToCaptureOn
 global my_ip
+global protocol
 
 settings = {
+    "_comment": "Settings Used with the geolocation module:",
     "log": False,
     "network_interface": "cH4nG3_tH1S",
-    "self_local_ip": "cH4nG3_tH1S"
+    "self_local_ip": "cH4nG3_tH1S",
+    "protocol_to_capture": "cH4nG3_tH1S"
 }
-
 
 
 def createGlobalLogFile():
@@ -104,25 +106,26 @@ def get_lines(text_obj, output: bool):
             time.sleep(0.1)
             print(line)
 
-
+global reader
 
 def get_loc(ip):
+    global reader
     location = reader.get(ip)
 
     try:
         country = location["country"]["names"]["en"]
     except:
-        country = "Unknown"
+        country = "Unknown Country"
 
     try:
         subdivision = location["subdivisions"][0]["names"]["en"]
     except:
-        subdivision = "Unknown"
+        subdivision = "Unknown Subdivision"
 
     try:
         city = location["city"]["names"]["en"]
     except:
-        city = "Unknown"
+        city = "Unknown City"
 
     return country, subdivision, city
 
@@ -131,6 +134,8 @@ global logging
 
 
 def op3x_geolocate():
+
+    createGlobalLogFile()
 
     usr_clr_sel = input("Would you like to clear previous session logs? [Y/y]\n")
 
@@ -161,6 +166,8 @@ def op3x_geolocate():
     global interfaceToCaptureOn
     global my_ip
     global logging
+    global protocol
+    global reader
 
     if os.path.exists('./settings.json'):
         data = read_from_json(global_settings_path)
@@ -171,14 +178,16 @@ def op3x_geolocate():
                 time.sleep(1)
                 interfaceToCaptureOn = "enp5s0"
                 print(f"Defaulting to {interfaceToCaptureOn} as interface.")
-                time.sleep(5)
+                time.sleep(1)
+                clear()
             elif data["network_interface"] == "":
                 print("Targeted Network Interface can't be left empty...")
                 time.sleep(1)
                 interfaceToCaptureOn = "enp5s0"
                 print(f"Defaulting to {interfaceToCaptureOn} as interface.")
                 get_lines(interface_instructions, True)
-                time.sleep(5)
+                time.sleep(1)
+                clear()
             else:
                 interfaceToCaptureOn = data["network_interface"]
         except Exception as e:
@@ -191,14 +200,16 @@ def op3x_geolocate():
                 time.sleep(1)
                 my_ip = "0.0.0.0"
                 print(f"Defaulting to {my_ip} as local Ipv4.")
-                time.sleep(5)
+                time.sleep(1)
+                clear()
             elif data["self_local_ip"] == "":
                 print("Local IP can't be left empty...")
                 time.sleep(1)
                 my_ip = "0.0.0.0"
                 print(f"Defaulting to {my_ip} as local Ipv4.")
                 get_lines(interface_instructions, True)
-                time.sleep(5)
+                time.sleep(1)
+                clear()
             else:
                 my_ip = data["self_local_ip"]
         except Exception as e:
@@ -210,7 +221,7 @@ def op3x_geolocate():
                 get_lines(logging_reminder, True)
                 time.sleep(1)
                 logging = False
-                time.sleep(5)
+                time.sleep(1)
             elif data["log"] == True:
                 print("Logging Enabled in this session. All events will be logged to ´global.log´ and ´latest.log´ files.")
                 time.sleep(1)
@@ -220,11 +231,25 @@ def op3x_geolocate():
         except Exception as e:
             raise
 
+        try:
+            if data["protocol_to_capture"] == "cH4nG3_tH1S":
+                print("Please Change The Targeted protocol in the ´settings.json´...")
+                protocol = "none"
+                time.sleep(5)
+            elif data["protocol_to_capture"] == "":
+                print("Protocol Can't be left empty please specify in the ´settings.json´.")
+                protocol = "none"
+                print(f"Defaulting to {protocol} as protocol.")
+                time.sleep(1)
+            else:
+                protocol = data["protocol_to_capture"]
+        except Exception as e:
+            raise
+
 
     if not os.path.exists('./logs'):
         os.makedirs('./logs')
 
-    createGlobalLogFile()
 
     cmd = f"sudo tshark -i {interfaceToCaptureOn}"
     print(f"---------------------- Capturing on {interfaceToCaptureOn}. ----------------------")
@@ -233,8 +258,6 @@ def op3x_geolocate():
     time.sleep(0.7)
 
     # my_ip = socket.gethostbyname(socket.gethostname())
-
-    argument = str(sys.argv[1] if len(sys.argv) > 1 else '.')
 
     dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
 
@@ -254,10 +277,44 @@ def op3x_geolocate():
 
     reader = geolite2.reader()
 
+    for line in iter(process.stdout.readline, b""):
+        columns = str(line).split(" ")
 
+# CSGO --> CLASSIC-STUN or classicstun
+        # Custom protocol
+        # PROGRAM            # PROTOCOL
+        if "TCP" in columns or "tcp" in columns:
 
+            if "->" in columns:
+                src_ip = columns[columns.index("->") - 1]
 
+            elif "→" in columns:
+                src_ip = columns[columns.index("→") - 1]
+            elif "\\xe2\\x86\\x92" in columns:
+                src_ip = columns[columns.index("\\xe2\\x86\\x92") - 1]
+            else:
+                continue
 
+            if "192" in src_ip:
+                continue
+
+            if src_ip == my_ip:
+                continue
+
+            try:
+                country, sub, city = get_loc(src_ip)
+                if logging:
+                    logOutput(("<" + src_ip + "> " + country + ", " + sub + ", " + city), 1)
+                print("<" + src_ip + "> " + country + ", " + sub + ", " + city)
+            except:
+                try:
+                    real_ip = socket.gethostbyname(src_ip)
+                    country, sub, city = get_loc(real_ip)
+                    if logging:
+                        logOutput(("<" + src_ip + "> " + ">>> " + country + ", " + sub + ", " + city), 1)
+                    print("<" + src_ip + "> " + ">>> " + country + ", " + sub + ", " + city)
+                except:
+                    print("Not found")
 
 
 op3x_text = ["""
@@ -368,6 +425,7 @@ op3x_menu = '''
 
 
 def main():
+
     while True:
         clear()
         get_lines(op3x_text, True)
