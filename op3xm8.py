@@ -63,9 +63,12 @@ settings = {
 
 
 def createGlobalLogFile():
+    # Create Master Logs Dir
+    if not os.path.exists('./logs'):
+        os.makedirs('./logs')
     # Master Global Log File
     if not os.path.exists(globalLogPath):
-        logFile = open(globalLogPath, "a+")
+        logFile = open(globalLogPath, "w+")
         logFile.close()
 
     # Json settings file
@@ -145,8 +148,9 @@ def op3x_geolocate():
             print("All previous logs cleared.")
             time.sleep(0.6)
             clear()
-        else:
-            pass
+
+    createGlobalLogFile()
+
     interface_instructions = '''
     ###################################################################################
     ##         - To get your network information depending on your OS -              ##
@@ -245,10 +249,6 @@ def op3x_geolocate():
                 protocol = data["protocol_to_capture"]
         except Exception as e:
             raise
-
-
-    if not os.path.exists('./logs'):
-        os.makedirs('./logs')
 
 
     cmd = f"sudo tshark -i {interfaceToCaptureOn}"
@@ -419,12 +419,12 @@ a8"     "8a  88P'    "8a       ""Y8,    `Y8, ,8P'   88P'   "88"    "8a   ,d8"""8
 ''']
 
 op3x_menu = '''
-########################################
-##        - This Menu(H/h)            ##
-##        - GeoIP (I/i)                ##
-##        - This Menu(H/h)            ##
-##        - This Menu(E/e/Q/q)        ##
-########################################
+######################################################################
+##                       - This Menu(H/h)                           ##
+##                       - GeoIP (I/i)                              ##
+##                       - This Menu(H/h)                           ##
+##                       - This Menu(E/e/Q/q)                       ##
+######################################################################
 '''
 
 
