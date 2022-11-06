@@ -3,7 +3,7 @@ import time
 import os
 from argparse import ArgumentError
 from ast import arg
-from asyncore import write
+
 import socket
 import subprocess
 import sys
@@ -13,18 +13,28 @@ import json
 from geolite2 import geolite2
 
 
-
-interfaceToCaptureOn = "enp5s0"
-
-settings = {
-    "log": False,
-    "network_interface": "cH4nG3_tH1S",
-}
-
 globalLogPath = "./logs/globalLogFile.log"
 globalLatestLogPath = "./logs/latest.log"
 global_settings_path = "./settings.json"
 now = datetime.now()
+
+
+def logOutput(msg, logType):
+    # Log
+    if logType == 1:
+        # print("\n[ LOG ] " + msg)
+        write_to_file("\n[LOG] " + msg, globalLogPath, "a+")
+        write_to_file("\n[LOG] " + msg, globalLatestLogPath, "a+")
+    # Error
+    elif logType == 2:
+        # print("\n[ ERROR ] " + msg)
+        write_to_file("\n[ERROR] " + msg, globalLogPath, "a+")
+        write_to_file("\n[ERROR] " + msg, globalLatestLogPath, "a+")
+    # Warning
+    elif logType == 3:
+        # print("\n[ WARNING ] " + msg)
+        write_to_file("\n[WARNING] " + msg, globalLogPath, "a+")
+        write_to_file("\n[WARNING] " + msg, globalLatestLogPath, "a+")
 
 
 def read_from_json(json_path: str):
@@ -32,6 +42,15 @@ def read_from_json(json_path: str):
         data = json.load(json_file)
     json_file.close()
     return data
+
+global interfaceToCaptureOn
+
+
+settings = {
+    "log": False,
+    "network_interface": "cH4nG3_tH1S",
+}
+
 
 
 def createGlobalLogFile():
@@ -56,80 +75,12 @@ def createGlobalLogFile():
         logFile.close()
 
 
-if not os.path.exists('./logs'):
-    os.makedirs('./logs')
-
-createGlobalLogFile()
-
-interfaceToCaptureOn = read_from_json("./settings.json")
-
-cmd = f"sudo tshark -i {interfaceToCaptureOn}"
-print(f"----------------------\n Capturing on {interfaceToCaptureOn}.\n----------------------")
-time.sleep(1)
-print(" - Use argument ´-l // --log´ to log to a file. And ´-c // --clear´ to clear logs.")
-process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-time.sleep(2)
-
-# my_ip = socket.gethostbyname(socket.gethostname())
-
-argument = str(sys.argv[1] if len(sys.argv) > 1 else '.')
-
-dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
-
-
 def write_to_file(text_to_write, path_to_file, typeOfWrite):
     if os.path.exists(path_to_file):
         write_file = open(path_to_file, typeOfWrite)
         write_file.write(text_to_write)
         write_file.close()
 
-
-def logOutput(msg, logType):
-    # Log
-    if logType == 1:
-        # print("\n[ LOG ] " + msg)
-        write_to_file("\n[LOG] " + msg, globalLogPath, "a+")
-        write_to_file("\n[LOG] " + msg, globalLatestLogPath, "a+")
-    # Error
-    elif logType == 2:
-        # print("\n[ ERROR ] " + msg)
-        write_to_file("\n[ERROR] " + msg, globalLogPath, "a+")
-        write_to_file("\n[ERROR] " + msg, globalLatestLogPath, "a+")
-    # Warning
-    elif logType == 3:
-        # print("\n[ WARNING ] " + msg)
-        write_to_file("\n[WARNING] " + msg, globalLogPath, "a+")
-        write_to_file("\n[WARNING] " + msg, globalLatestLogPath, "a+")
-
-
-global logging
-
-if argument == "-l" or argument == "--log":
-    logging = True
-    logOutput("-------------" + dt_string + "-------------", 3)
-    write_to_file("-------------" + dt_string + "-------------", globalLatestLogPath, "w")
-    write_to_file(dt_string, globalLatestLogPath, "w")
-    print("\n[ WARNING ] " + "[ Logging to file activated... ]")
-    # logOutput("[ Logging to file activated... ]", 3)
-elif argument == "-c" or argument == "--clear":
-    if os.path.exists("./logs"):
-        shutil.rmtree("./logs", ignore_errors=True)
-    logging = False
-    print("Deleted all logs and exited with code 0.")
-    exit(1)
-else:
-    logging = False
-    print("\n[ WARNING ] " + "[ Not logging to file... ]")
-    # logOutput("[ Not logging to file... ]", 3)
-
-time.sleep(1)
-
-my_ip = "192.168.1.72"
-print("\n[ LOG ] " + "Local_IP: " + my_ip)
-if logging:
-    logOutput(f"Local_IP = {my_ip}", 1)
-
-reader = geolite2.reader()
 
 
 def get_loc(ip):
@@ -153,11 +104,69 @@ def get_loc(ip):
     return country, subdivision, city
 
 
+global logging
 
 
+def op3x_geolocate():
+    global interfaceToCaptureOn
+
+    interfaceToCaptureOn = "enp5s0"
+
+    if os.path.exists('./settings.json'):
+        data = read_from_json(global_settings_path)
+        try:
+            if data["network_interface"] == "cH4nG3_tH1S":
+                print("Please Change The Targeted Network Interface...")
+        except Exception as e:
+            raise
 
 
+    if not os.path.exists('./logs'):
+        os.makedirs('./logs')
 
+    createGlobalLogFile()
+
+    interfaceToCaptureOn = read_from_json("./settings.json")
+
+    cmd = f"sudo tshark -i {interfaceToCaptureOn}"
+    print(f"---------------------- Capturing on {interfaceToCaptureOn}. ----------------------")
+    time.sleep(1)
+    print(" - Use argument ´-l // --log´ to log to a file. And ´-c // --clear´ to clear logs.")
+    process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    time.sleep(2)
+
+    # my_ip = socket.gethostbyname(socket.gethostname())
+
+    argument = str(sys.argv[1] if len(sys.argv) > 1 else '.')
+
+    dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
+
+    if argument == "-l" or argument == "--log":
+        logging = True
+        logOutput("-------------" + dt_string + "-------------", 3)
+        write_to_file("-------------" + dt_string + "-------------", globalLatestLogPath, "w")
+        write_to_file(dt_string, globalLatestLogPath, "w")
+        print("\n[ WARNING ] " + "[ Logging to file activated... ]")
+        # logOutput("[ Logging to file activated... ]", 3)
+    elif argument == "-c" or argument == "--clear":
+        if os.path.exists("./logs"):
+            shutil.rmtree("./logs", ignore_errors=True)
+        logging = False
+        print("Deleted all logs and exited with code 0.")
+        exit(1)
+    else:
+        logging = False
+        print("\n[ WARNING ] " + "[ Not logging to file... ]")
+        # logOutput("[ Not logging to file... ]", 3)
+
+    time.sleep(1)
+
+    my_ip = "192.168.1.72"
+    print("\n[ LOG ] " + "Local_IP: " + my_ip)
+    if logging:
+        logOutput(f"Local_IP = {my_ip}", 1)
+
+    reader = geolite2.reader()
 
 
 
@@ -262,19 +271,6 @@ a8"     "8a  88P'    "8a       ""Y8,    `Y8, ,8P'   88P'   "88"    "8a   ,d8"""8
   |_( )__| |_( )__| |_( )__| |_( )__| |_( )__| |_( )__|
 ''',
              '''
-=====================================================
-==================   ========================     ===
-================   =   =====================  ===  ==
-===============   ===   ===================  =====  =
-==   ===    ========   ===  =  ==  =  = ====  ===  ==
-=     ==  =  =====    ====  =  ==        ====     ===
-=  =  ==  =  =======   ====   ===  =  =  ===  ===  ==
-=  =  ==    ===   ===   ===   ===  =  =  ==  =====  =
-=  =  ==  ======   =   ===  =  ==  =  =  ===  ===  ==
-==   ===  ========   =====  =  ==  =  =  ====     ===
-=====================================================
-''',
-             '''
  ▄▄▄▄▄▄▄▄▄▄▄  ▄▄▄▄▄▄▄▄▄▄▄  ▄▄▄▄▄▄▄▄▄▄▄  ▄       ▄  ▄▄       ▄▄  ▄▄▄▄▄▄▄▄▄▄▄ 
 ▐░░░░░░░░░░░▌▐░░░░░░░░░░░▌▐░░░░░░░░░░░▌▐░▌     ▐░▌▐░░▌     ▐░░▌▐░░░░░░░░░░░▌
 ▐░█▀▀▀▀▀▀▀█░▌▐░█▀▀▀▀▀▀▀█░▌ ▀▀▀▀▀▀▀▀▀█░▌ ▐░▌   ▐░▌ ▐░▌░▌   ▐░▐░▌▐░█▀▀▀▀▀▀▀█░▌
@@ -290,9 +286,10 @@ a8"     "8a  88P'    "8a       ""Y8,    `Y8, ,8P'   88P'   "88"    "8a   ,d8"""8
 
 op3x_menu = '''
 ########################################
-##        [1] - This Menu(H/h)        ##
-##        [1] - This Menu(H/h)        ##
-##        [1] - This Menu(H/h)        ##
+##        - This Menu(H/h)            ##
+##        - GeoIP (I/i)                ##
+##        - This Menu(H/h)            ##
+##        - This Menu(E/e/Q/q)        ##
 ########################################
 '''
 
@@ -320,9 +317,24 @@ def clear():
 
 
 def main():
-    clear()
-    get_lines(op3x_text, True)
-    get_lines(op3x_menu, True)
+    while True:
+        clear()
+        get_lines(op3x_text, True)
+        get_lines(op3x_menu, True)
+
+        usr_sel = input("~$: ")
+
+        if usr_sel.lower() == "H" or usr_sel.lower() == "h":
+            continue
+
+        elif usr_sel.lower() == "I" or usr_sel.lower() == "i":
+            clear()
+            op3x_geolocate()
+            input()
+
+        else:
+            print("Please Input A Valid Selection!")            
+            time.sleep(1)
 
 
 if __name__ == '__main__':
