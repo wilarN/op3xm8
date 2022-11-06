@@ -83,6 +83,22 @@ def write_to_file(text_to_write, path_to_file, typeOfWrite):
 
 
 
+def get_lines(text_obj, output: bool):
+    logo_lines = []
+    if type(text_obj) == list:
+        for line in text_obj[random.randint(0, len(text_obj)-1)].split("\n"):
+            logo_lines.append(line)
+    else:
+        for line in text_obj.split("\n"):
+            logo_lines.append(line)
+
+    if output:
+        for line in logo_lines:
+            time.sleep(0.1)
+            print(line)
+
+
+
 def get_loc(ip):
     location = reader.get(ip)
 
@@ -108,15 +124,37 @@ global logging
 
 
 def op3x_geolocate():
-    global interfaceToCaptureOn
 
-    interfaceToCaptureOn = "enp5s0"
+    interface_instructions = '''
+    ###################################################################################
+    ##          To get your network interface depending on your OS:                  ##
+    ##                - LINUX --> $~:       ifconfig -a                              ##
+    ##                - WINDOWS --> $~:     ipconfig/all                             ##
+    ##                - MAC --> $~: Honestly no fkn clue, guess ur out of luck lol.  ##
+    ###################################################################################
+    '''
+
+    global interfaceToCaptureOn
 
     if os.path.exists('./settings.json'):
         data = read_from_json(global_settings_path)
         try:
             if data["network_interface"] == "cH4nG3_tH1S":
                 print("Please Change The Targeted Network Interface...")
+                get_lines(interface_instructions, True)
+                time.sleep(1)
+                interfaceToCaptureOn = "enp5s0"
+                print(f"Defaulting to {interfaceToCaptureOn} as interface.")
+                time.sleep(5)
+            elif data["network_interface"] == "":
+                print("Targeted Network Interface can't be left empty...")
+                time.sleep(1)
+                interfaceToCaptureOn = "enp5s0"
+                print(f"Defaulting to {interfaceToCaptureOn} as interface.")
+                get_lines(interface_instructions, True)
+                time.sleep(5)
+            else:
+                interfaceToCaptureOn = data["network_interface"]
         except Exception as e:
             raise
 
@@ -125,8 +163,6 @@ def op3x_geolocate():
         os.makedirs('./logs')
 
     createGlobalLogFile()
-
-    interfaceToCaptureOn = read_from_json("./settings.json")
 
     cmd = f"sudo tshark -i {interfaceToCaptureOn}"
     print(f"---------------------- Capturing on {interfaceToCaptureOn}. ----------------------")
@@ -292,21 +328,6 @@ op3x_menu = '''
 ##        - This Menu(E/e/Q/q)        ##
 ########################################
 '''
-
-
-def get_lines(text_obj, output: bool):
-    logo_lines = []
-    if type(text_obj) == list:
-        for line in text_obj[random.randint(0, len(text_obj)-1)].split("\n"):
-            logo_lines.append(line)
-    else:
-        for line in text_obj.split("\n"):
-            logo_lines.append(line)
-
-    if output:
-        for line in logo_lines:
-            time.sleep(0.1)
-            print(line)
 
 
 def clear():
