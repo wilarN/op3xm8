@@ -423,7 +423,7 @@ op3x_menu = '''
 ##                       - This Menu(H/h)                           ##
 ##                       - GeoIP (I/i)                              ##
 ##                       - This Menu(H/h)                           ##
-##                       - This Menu(E/e/Q/q)                       ##
+##                       - Exit/Terminate(E/e/Q/q)                  ##
 ######################################################################
 '''
 
