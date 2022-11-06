@@ -10,11 +10,18 @@ from datetime import datetime
 import shutil
 import json
 from geolite2 import geolite2
+import select
+import errno
+import sys
+import threading
+import signal
+from sys import platform
 
 
 globalLogPath = "./logs/globalLogFile.log"
 globalLatestLogPath = "./logs/latest.log"
 global_settings_path = "./settings.json"
+global_settings_socketchat_path = "./settings_socketchat.json"
 now = datetime.now()
 
 
@@ -61,6 +68,14 @@ settings = {
     "protocol_to_capture": "cH4nG3_tH1S"
 }
 
+socket_chat_settings = {
+    "_comment": "Settings Used with the socketchat client module:",
+    "USERNAME": "",
+    "IP": "cH4nG3_tH1S",
+    "PORT": "cH4nG3_tH1S",
+}
+
+
 
 def createGlobalLogFile():
     # Create Master Logs Dir
@@ -79,6 +94,14 @@ def createGlobalLogFile():
             jsonfile.write(json_settings)
         jsonfile.close()
 
+    # Json socketchat settings file
+    if not os.path.exists(global_settings_socketchat_path):
+        json_settings = json.dumps(socket_chat_settings)
+
+        with open("settings_socketchat.json", "w") as jsonfile:
+            jsonfile.write(json_settings)
+        jsonfile.close()
+
     # Master Global Latest Log File
     if os.path.exists(globalLatestLogPath):
         os.remove(globalLatestLogPath)
@@ -86,6 +109,7 @@ def createGlobalLogFile():
         logFile = open(globalLatestLogPath, "a+")
         logFile.close()
 
+createGlobalLogFile()
 
 def write_to_file(text_to_write, path_to_file, typeOfWrite):
     if os.path.exists(path_to_file):
@@ -321,6 +345,130 @@ def op3x_geolocate():
                     print("Not found")
 
 
+HEADER_LENGTH = 10
+
+
+def prRed(skk): print("\033[91m {}\033[00m".format(skk))
+
+
+def prGreen(skk): print("\033[92m {}\033[00m".format(skk))
+
+
+def prYellow(skk): print("\033[93m {}\033[00m".format(skk))
+
+
+def prLightPurple(skk): print("\033[94m {}\033[00m".format(skk))
+
+
+def prPurple(skk): print("\033[95m {}\033[00m".format(skk))
+
+
+def prCyan(skk): print("\033[96m {}\033[00m".format(skk))
+
+
+def prLightGray(skk): print("\033[97m {}\033[00m".format(skk))
+
+
+def prBlack(skk): print("\033[98m {}\033[00m".format(skk))
+
+
+def sendMsg():
+    global active
+    while active:
+        message = input(f"{my_username} > ")
+        # message = ""
+
+        if message.lower() == 'quit' or message.lower() == 'exit' or message.lower() == 'disconnect' or message.lower() == 'dc' or message.lower() == 'leave':
+            if os.name in ('nt', 'dos'):
+                prRed("Left the chat.")
+                active = False
+                break
+                os.kill(os.getpid(), signal.SIGINT)
+            else:
+                print("Left the chat.")
+                active = False
+                break
+            # sys.exit()
+
+        elif message.lower() == "help" or message.lower() == "/help":
+            print("-----------"
+                  " Help "
+                  "-----------\n"
+                  "- help(/help) --> Shows this help message.\n"
+                  "- clear(/clear) --> Clear terminal.\n")
+
+        elif message.lower() == "clear" or message.lower() == "/clear":
+            clearTerminal()
+
+        else:
+            message = message.encode("utf-8")
+            message_header = f"{len(message):<{HEADER_LENGTH}}".encode("utf-8")
+            client_socket.send(message_header + message)
+
+
+def recvMsg():
+    global active
+    while active:
+        try:
+            while True:
+                # receive stuff yk.
+                username_header = client_socket.recv(HEADER_LENGTH)
+                if not len(username_header):
+                    print("Connection closed by the server")
+                    sys.exit()
+
+                username_length = int(username_header.decode("utf-8").strip())
+                username = client_socket.recv(username_length).decode("utf-8")
+
+                message_header = client_socket.recv(HEADER_LENGTH)
+                message_length = int(message_header.decode("utf-8").strip())
+                message = client_socket.recv(message_length).decode("utf-8")
+
+                print("\n" + username + " > " + message, end="")
+                print("\n" + f"{my_username} > ", end="")
+
+        except IOError as e:
+            if e.errno != errno.EAGAIN and e.errno != errno.EWOULDBLOCK:
+                print('Reading error', str(e))
+                sys.exit()
+
+        except Exception as e:
+            print('General Error', str(e))
+            sys.exit()
+
+
+
+def socket_chat_outputPrint(lineBefore, msg, lineAfter):
+    if platform == "linux":
+        if lineBefore: prCyan("------------------------------------------------")
+        prYellow(msg)
+        if lineAfter: prCyan("------------------------------------------------")
+    else:
+        if lineBefore: print("------------------------------------------------")
+        print(msg)
+        if lineAfter: print("------------------------------------------------")
+
+
+def op3x_socket_chat_client():
+    data = read_from_json(global_settings_socketchat_path)
+    socket_chat_outputPrint(True, "", False)
+    my_username = input("Username: ")
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    client_socket.connect((data["IP"], data["PORT"]))
+    client_socket.setblocking(False)
+
+    my_username = f"[{my_username.lower()}]"
+
+    username = my_username.encode('utf-8')
+    username_header = f"{len(username):<{HEADER_LENGTH}}".encode('utf-8')
+    client_socket.send(username_header + username)
+
+    socket_chat_outputPrint(True, f"{my_username} + has connected to the chatroom.", True)
+
+t1 = threading.Thread(target=recvMsg, name="t1")
+t2 = threading.Thread(target=sendMsg, name="t2")
+
+
 op3x_text = ["""
                       /$$$$$$                           /$$$$$$ 
                      /$$__  $$                         /$$__  $$
@@ -422,7 +570,7 @@ op3x_menu = '''
 ######################################################################
 ##                       - This Menu(H/h)                           ##
 ##                       - GeoIP (I/i)                              ##
-##                       - This Menu(H/h)                           ##
+##                       - SocketChat Client(C/c)                   ##
 ##                       - Exit/Terminate(E/e/Q/q)                  ##
 ######################################################################
 '''
@@ -444,7 +592,20 @@ def main():
             clear()
             op3x_geolocate()
             input()
+        elif usr_sel.lower() == "C" or usr_sel.lower() == "c":
+            clear()
+            op3x_socket_chat_client()
+            global active
+            t1.start()
+            t2.start()
+            if not active:
+                if os.name in ('nt', 'dos'):
+                    os.kill(os.getpid(), signal.SIGINT) 
+                else:
+                    os._exit()
 
+
+            input()
         elif usr_sel.lower() == "E" or usr_sel.lower() == "e" or usr_sel.lower() == "Q" or usr_sel.lower() == "q":
             clear()
             get_lines(op3x_text, True)
