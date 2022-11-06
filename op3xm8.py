@@ -234,11 +234,11 @@ def op3x_geolocate():
         try:
             if data["protocol_to_capture"] == "cH4nG3_tH1S":
                 print("Please Change The Targeted protocol in the ´settings.json´...")
-                protocol = "none"
+                protocol = "UDP"
                 time.sleep(5)
             elif data["protocol_to_capture"] == "":
                 print("Protocol Can't be left empty please specify in the ´settings.json´.")
-                protocol = "none"
+                protocol = "UDP"
                 print(f"Defaulting to {protocol} as protocol.")
                 time.sleep(1)
             else:
@@ -265,6 +265,8 @@ def op3x_geolocate():
         logOutput("-------------" + dt_string + "-------------", 3)
         write_to_file("-------------" + dt_string + "-------------", globalLatestLogPath, "w")
         write_to_file(dt_string, globalLatestLogPath, "w")
+        logOutput(f"Capturing on protocol: ´{protocol}´", 1)
+        print(f"Capturing on protocol: ´{protocol}´")
         print("\n[ WARNING ] " + "[ Logging to file activated... ]")
     elif logging == False:
         print("\n[ WARNING ] " + "[ Not logging to file... ]")
@@ -280,11 +282,13 @@ def op3x_geolocate():
     for line in iter(process.stdout.readline, b""):
         columns = str(line).split(" ")
 
-# CSGO --> CLASSIC-STUN or classicstun
+# CSGO P2P LOBBY VC--> CLASSIC-STUN or classicstun
+        # UDP SELECTED (DEFAULT IF NOT SPECIFIED)
+
         # Custom protocol
         # PROGRAM            # PROTOCOL
-        if "TCP" in columns or "tcp" in columns:
-
+        #if "TCP" in columns or "tcp" in columns:
+        if protocol in columns or protocol.lower() in columns:
             if "->" in columns:
                 src_ip = columns[columns.index("->") - 1]
 
