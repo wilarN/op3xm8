@@ -3,7 +3,6 @@ import time
 import os
 from argparse import ArgumentError
 from ast import arg
-
 import socket
 import subprocess
 import sys
@@ -17,6 +16,13 @@ globalLogPath = "./logs/globalLogFile.log"
 globalLatestLogPath = "./logs/latest.log"
 global_settings_path = "./settings.json"
 now = datetime.now()
+
+
+def clear():
+    if os.name == 'nt':
+        _ = os.system('cls')
+    else:
+        _ = os.system('clear')
 
 
 def logOutput(msg, logType):
@@ -44,11 +50,12 @@ def read_from_json(json_path: str):
     return data
 
 global interfaceToCaptureOn
-
+global my_ip
 
 settings = {
     "log": False,
     "network_interface": "cH4nG3_tH1S",
+    "self_local_ip": "cH4nG3_tH1S"
 }
 
 
@@ -125,16 +132,35 @@ global logging
 
 def op3x_geolocate():
 
+    usr_clr_sel = input("Would you like to clear previous session logs? [Y/y]\n")
+
+    if usr_clr_sel.lower() == "Y" or usr_clr_sel.lower() == "y":
+        if os.path.exists("./logs"):
+            shutil.rmtree("./logs", ignore_errors=True)
+            print("All previous logs cleared.")
+            time.sleep(0.6)
+            clear()
+        else:
+            pass
     interface_instructions = '''
     ###################################################################################
-    ##          To get your network interface depending on your OS:                  ##
+    ##         - To get your network information depending on your OS -              ##
     ##                - LINUX --> $~:       ifconfig -a                              ##
     ##                - WINDOWS --> $~:     ipconfig/all                             ##
     ##                - MAC --> $~: Honestly no fkn clue, guess ur out of luck lol.  ##
     ###################################################################################
     '''
 
+    logging_reminder = '''
+    ###################################################################################
+    ##                 - To enable logging for your session -                        ##
+    ##                - Edit the settings.json file in the .py file directory.       ##
+    ###################################################################################
+    '''
+
     global interfaceToCaptureOn
+    global my_ip
+    global logging
 
     if os.path.exists('./settings.json'):
         data = read_from_json(global_settings_path)
@@ -158,6 +184,42 @@ def op3x_geolocate():
         except Exception as e:
             raise
 
+        try:
+            if data["self_local_ip"] == "cH4nG3_tH1S":
+                print("Please Change The Local Ip Address To avoid log output from own system...")
+                get_lines(interface_instructions, True)
+                time.sleep(1)
+                my_ip = "0.0.0.0"
+                print(f"Defaulting to {my_ip} as local Ipv4.")
+                time.sleep(5)
+            elif data["self_local_ip"] == "":
+                print("Local IP can't be left empty...")
+                time.sleep(1)
+                my_ip = "0.0.0.0"
+                print(f"Defaulting to {my_ip} as local Ipv4.")
+                get_lines(interface_instructions, True)
+                time.sleep(5)
+            else:
+                my_ip = data["self_local_ip"]
+        except Exception as e:
+            raise
+
+        try:
+            if data["log"] == False:
+                print("Logging is set to False, no logging to files will be activated for this session.")
+                get_lines(logging_reminder, True)
+                time.sleep(1)
+                logging = False
+                time.sleep(5)
+            elif data["log"] == True:
+                print("Logging Enabled in this session. All events will be logged to ´global.log´ and ´latest.log´ files.")
+                time.sleep(1)
+                logging = True
+            else:
+                pass
+        except Exception as e:
+            raise
+
 
     if not os.path.exists('./logs'):
         os.makedirs('./logs')
@@ -166,10 +228,9 @@ def op3x_geolocate():
 
     cmd = f"sudo tshark -i {interfaceToCaptureOn}"
     print(f"---------------------- Capturing on {interfaceToCaptureOn}. ----------------------")
-    time.sleep(1)
-    print(" - Use argument ´-l // --log´ to log to a file. And ´-c // --clear´ to clear logs.")
+    time.sleep(0.3)
     process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    time.sleep(2)
+    time.sleep(0.7)
 
     # my_ip = socket.gethostbyname(socket.gethostname())
 
@@ -177,27 +238,16 @@ def op3x_geolocate():
 
     dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
 
-    if argument == "-l" or argument == "--log":
-        logging = True
+    if logging == True:
         logOutput("-------------" + dt_string + "-------------", 3)
         write_to_file("-------------" + dt_string + "-------------", globalLatestLogPath, "w")
         write_to_file(dt_string, globalLatestLogPath, "w")
         print("\n[ WARNING ] " + "[ Logging to file activated... ]")
-        # logOutput("[ Logging to file activated... ]", 3)
-    elif argument == "-c" or argument == "--clear":
-        if os.path.exists("./logs"):
-            shutil.rmtree("./logs", ignore_errors=True)
-        logging = False
-        print("Deleted all logs and exited with code 0.")
-        exit(1)
-    else:
-        logging = False
+    elif logging == False:
         print("\n[ WARNING ] " + "[ Not logging to file... ]")
-        # logOutput("[ Not logging to file... ]", 3)
-
+    else:
+        print("\n[ ERR-WARN ] " + "[ Please Specify if logging should be enabled or not... ]")
     time.sleep(1)
-
-    my_ip = "192.168.1.72"
     print("\n[ LOG ] " + "Local_IP: " + my_ip)
     if logging:
         logOutput(f"Local_IP = {my_ip}", 1)
@@ -213,12 +263,12 @@ def op3x_geolocate():
 op3x_text = ["""
                       /$$$$$$                           /$$$$$$ 
                      /$$__  $$                         /$$__  $$
-  /$$$$$$   /$$$$$$ |__/  \ $$ /$$   /$$ /$$$$$$/$$$$ | $$  \ $$
+  /$$$$$$   /$$$$$$ |__/  \\ $$ /$$   /$$ /$$$$$$/$$$$ | $$  \\ $$
  /$$__  $$ /$$__  $$   /$$$$$/|  $$ /$$/| $$_  $$_  $$|  $$$$$$/
-| $$  \ $$| $$  \ $$  |___  $$ \  $$$$/ | $$ \ $$ \ $$ >$$__  $$
-| $$  | $$| $$  | $$ /$$  \ $$  >$$  $$ | $$ | $$ | $$| $$  \ $$
-|  $$$$$$/| $$$$$$$/|  $$$$$$/ /$$/\  $$| $$ | $$ | $$|  $$$$$$/
- \______/ | $$____/  \______/ |__/  \__/|__/ |__/ |__/ \______/ 
+| $$  \\ $$| $$  \\ $$  |___  $$ \\  $$$$/ | $$ \\ $$ \\ $$ >$$__  $$
+| $$  | $$| $$  | $$ /$$  \\ $$  >$$  $$ | $$ | $$ | $$| $$  \\ $$
+|  $$$$$$/| $$$$$$$/|  $$$$$$/ /$$/\\  $$| $$ | $$ | $$|  $$$$$$/
+ \\______/ | $$____/  \\______/ |__/  \\__/|__/ |__/ |__/ \\______/ 
           | $$                                                  
           | $$                                                  
           |__/                                                  
@@ -268,12 +318,6 @@ d88' `88b  888' `88b     <88b.   `88b..8P'  `888P"Y88bP"Y88b   `88888b.
            888                                                           
           o888o                                                          
 ''',
-             '''
-____ ____ ____ ____ ____ ____ 
-||o |||p |||3 |||x |||m |||8 ||
-||__|||__|||__|||__|||__|||__||
-|/__\|/__\|/__\|/__\|/__\|/__\|
-''',
              '''                                                                          
                            ad888888b,                                    ad88888ba   
                           d8"     "88                                   d8"     "8b  
@@ -300,13 +344,6 @@ a8"     "8a  88P'    "8a       ""Y8,    `Y8, ,8P'   88P'   "88"    "8a   ,d8"""8
                                                               
 ''',
              '''
-     _        _        _        _        _        _    
-   _( )__   _( )__   _( )__   _( )__   _( )__   _( )__ 
- _|     _|_|     _|_|     _|_|     _|_|     _|_|     _|
-(_ O _ (_(_ P _ (_(_ 3 _ (_(_ X _ (_(_ M _ (_(_ 8 _ (_ 
-  |_( )__| |_( )__| |_( )__| |_( )__| |_( )__| |_( )__|
-''',
-             '''
  ▄▄▄▄▄▄▄▄▄▄▄  ▄▄▄▄▄▄▄▄▄▄▄  ▄▄▄▄▄▄▄▄▄▄▄  ▄       ▄  ▄▄       ▄▄  ▄▄▄▄▄▄▄▄▄▄▄ 
 ▐░░░░░░░░░░░▌▐░░░░░░░░░░░▌▐░░░░░░░░░░░▌▐░▌     ▐░▌▐░░▌     ▐░░▌▐░░░░░░░░░░░▌
 ▐░█▀▀▀▀▀▀▀█░▌▐░█▀▀▀▀▀▀▀█░▌ ▀▀▀▀▀▀▀▀▀█░▌ ▐░▌   ▐░▌ ▐░▌░▌   ▐░▐░▌▐░█▀▀▀▀▀▀▀█░▌
@@ -330,13 +367,6 @@ op3x_menu = '''
 '''
 
 
-def clear():
-    if os.name == 'nt':
-        _ = os.system('cls')
-    else:
-        _ = os.system('clear')
-
-
 def main():
     while True:
         clear()
@@ -352,6 +382,13 @@ def main():
             clear()
             op3x_geolocate()
             input()
+
+        elif usr_sel.lower() == "E" or usr_sel.lower() == "e" or usr_sel.lower() == "Q" or usr_sel.lower() == "q":
+            clear()
+            get_lines(op3x_text, True)
+            print(" - Come back sometime, friend. - ")
+            time.sleep(1)
+            exit(0)
 
         else:
             print("Please Input A Valid Selection!")            
