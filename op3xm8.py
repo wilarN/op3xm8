@@ -1,21 +1,18 @@
-import random
-import time
+import errno
+import json
 import os
-from argparse import ArgumentError
-from ast import arg
+import random
+import shutil
+import signal
 import socket
 import subprocess
 import sys
-from datetime import datetime
-import shutil
-import json
-from geolite2 import geolite2
-import select
-import errno
-import sys
 import threading
-import signal
+import time
+from datetime import datetime
 from sys import platform
+
+from geolite2 import geolite2
 
 globalLogPath = "./logs/globalLogFile.log"
 globalLatestLogPath = "./logs/latest.log"
