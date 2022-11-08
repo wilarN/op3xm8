@@ -60,6 +60,8 @@ global interfaceToCaptureOn
 global my_ip
 global protocol
 
+global active
+
 settings = {
     "_comment": "Settings Used with the geolocation module:",
     "log": False,
@@ -72,12 +74,13 @@ settings = {
     "PORT": "cH4nG3_tH1S",
 }
 
-#socket_chat_settings = {
+
+# socket_chat_settings = {
 #    "_comment": "Settings Used with the socketchat client module:",
 #    "USERNAME": "",
 #    "IP": "cH4nG3_tH1S",
 #    "PORT": "cH4nG3_tH1S",
-#}
+# }
 
 
 def createGlobalLogFile():
@@ -98,13 +101,13 @@ def createGlobalLogFile():
         jsonfile.close()
 
     # Json socketchat settings file
-#    if not os.path.exists(global_settings_socketchat_path):
-#        json_settings = json.dumps(socket_chat_settings)
+    #    if not os.path.exists(global_settings_socketchat_path):
+    #        json_settings = json.dumps(socket_chat_settings)
 
-#        with open("settings_socketchat.json", "w") as jsonfile:
-#            jsonfile.write(json_settings)
-#        jsonfile.close()
-#
+    #        with open("settings_socketchat.json", "w") as jsonfile:
+    #            jsonfile.write(json_settings)
+    #        jsonfile.close()
+    #
     # Master Global Latest Log File
     if os.path.exists(globalLatestLogPath):
         os.remove(globalLatestLogPath)
@@ -249,13 +252,13 @@ def op3x_geolocate():
             raise
 
         try:
-            if data["log"] == False:
+            if not data["log"]:
                 print("Logging is set to False, no logging to files will be activated for this session.")
                 get_lines(logging_reminder, True)
                 time.sleep(1)
                 logging = False
                 time.sleep(1)
-            elif data["log"] == True:
+            elif data["log"]:
                 print(
                     "Logging Enabled in this session. All events will be logged to ´global.log´ and ´latest.log´ files.")
                 time.sleep(1)
@@ -263,7 +266,7 @@ def op3x_geolocate():
             else:
                 pass
         except Exception as e:
-            raise
+            raise e
 
         try:
             if data["protocol_to_capture"] == "cH4nG3_tH1S":
@@ -278,7 +281,7 @@ def op3x_geolocate():
             else:
                 protocol = data["protocol_to_capture"]
         except Exception as e:
-            raise
+            raise e
 
     cmd = f"sudo tshark -i {interfaceToCaptureOn}"
     print(f"---------------------- Capturing on {interfaceToCaptureOn}. ----------------------")
@@ -290,14 +293,14 @@ def op3x_geolocate():
 
     dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
 
-    if logging == True:
+    if logging:
         logOutput("-------------" + dt_string + "-------------", 3)
         write_to_file("-------------" + dt_string + "-------------", globalLatestLogPath, "w")
         write_to_file(dt_string, globalLatestLogPath, "w")
         logOutput(f"Capturing on protocol: ´{protocol}´", 1)
         print(f"Capturing on protocol: ´{protocol}´")
         print("\n[ WARNING ] " + "[ Logging to file activated... ]")
-    elif logging == False:
+    elif not logging:
         print("\n[ WARNING ] " + "[ Not logging to file... ]")
     else:
         print("\n[ ERR-WARN ] " + "[ Please Specify if logging should be enabled or not... ]")
@@ -346,8 +349,8 @@ def op3x_geolocate():
                     if logging:
                         logOutput(("<" + src_ip + "> " + ">>> " + country + ", " + sub + ", " + city), 1)
                     print("<" + src_ip + "> " + ">>> " + country + ", " + sub + ", " + city)
-                except:
-                    print("Not found")
+                except Exception as e:
+                    raise e
 
 
 HEADER_LENGTH = 10
@@ -388,7 +391,7 @@ def sendMsg():
                 prRed("Left the chat.")
                 active = False
                 break
-                os.kill(os.getpid(), signal.SIGINT)
+                # os.kill(os.getpid(), signal.SIGINT)
             else:
                 print("Left the chat.")
                 active = False
@@ -403,7 +406,7 @@ def sendMsg():
                   "- clear(/clear) --> Clear terminal.\n")
 
         elif message.lower() == "clear" or message.lower() == "/clear":
-            clearTerminal()
+            clear()
 
         else:
             message = message.encode("utf-8")
@@ -453,7 +456,13 @@ def socket_chat_outputPrint(lineBefore, msg, lineAfter):
         if lineAfter: print("------------------------------------------------")
 
 
+global client_socket
+global my_username
+
+
 def op3x_socket_chat_client():
+    global my_username
+    global client_socket
     data = read_from_json(global_settings_socketchat_path)
     socket_chat_outputPrint(True, "", False)
     my_username = input("Username: ")
@@ -502,6 +511,24 @@ u8888cJ888   uW888L  888' :@88N   '8888N  .u./"888&     X888  888X '888>  d8F   
                '8>                                                                        
                 "                                                                         
 """,
+             '''                             
+                          ad888888b,                                   ad88888ba  
+                         d8"     "88                                  d8"     "8b 
+                                 a88                                  88       88 
+                                ,88P                                  Y8a     a8P 
+                              aad8"                                    "Y8aaa8P"  
+   ,ggggg,    gg,gggg,        ""Y8,      ,gg,   ,gg  ,ggg,,ggg,,ggg,   ,d8"""8b,  
+  dP"  "Y8ggg I8P"  "Yb         `88b    d8""8b,dP"  ,8" "8P" "8P" "8, d8"     "8b 
+ i8'    ,8I   I8'    ,8i         "88   dP   ,88"    I8   8I   8I   8I 88       88 
+,d8,   ,d8'  ,I8 _  ,d8' Y8,     a88 ,dP  ,dP"Y8,  ,dP   8I   8I   Yb,Y8a     a8P 
+P"Y8888P"    PI8 YY88888P "Y888888P' 8"  dP"   "Y888P'   8I   8I   `Y8 "Y88888P"  
+              I8                                                                  
+              I8                                                                  
+              I8                                                                  
+              I8                                                                  
+              I8                                                                  
+              I8                                                                  
+''',
              '''
                        .oooo.                                  .ooooo.   
                      .dP""Y88b                                d88'   `8. 
@@ -561,7 +588,7 @@ def main():
                 if os.name in ('nt', 'dos'):
                     os.kill(os.getpid(), signal.SIGINT)
                 else:
-                    os._exit()
+                    exit(0)
 
             input()
         elif usr_sel.lower() == "E" or usr_sel.lower() == "e" or usr_sel.lower() == "Q" or usr_sel.lower() == "q":
