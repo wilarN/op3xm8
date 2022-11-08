@@ -17,7 +17,6 @@ import threading
 import signal
 from sys import platform
 
-
 globalLogPath = "./logs/globalLogFile.log"
 globalLatestLogPath = "./logs/latest.log"
 global_settings_path = "./settings.json"
@@ -56,6 +55,7 @@ def read_from_json(json_path: str):
     json_file.close()
     return data
 
+
 global interfaceToCaptureOn
 global my_ip
 global protocol
@@ -65,16 +65,19 @@ settings = {
     "log": False,
     "network_interface": "cH4nG3_tH1S",
     "self_local_ip": "cH4nG3_tH1S",
-    "protocol_to_capture": "cH4nG3_tH1S"
-}
-
-socket_chat_settings = {
-    "_comment": "Settings Used with the socketchat client module:",
+    "protocol_to_capture": "cH4nG3_tH1S",
+    "_comment_socket_chat": "Settings Used with the socket_chat client module:",
     "USERNAME": "",
     "IP": "cH4nG3_tH1S",
     "PORT": "cH4nG3_tH1S",
 }
 
+#socket_chat_settings = {
+#    "_comment": "Settings Used with the socketchat client module:",
+#    "USERNAME": "",
+#    "IP": "cH4nG3_tH1S",
+#    "PORT": "cH4nG3_tH1S",
+#}
 
 
 def createGlobalLogFile():
@@ -86,22 +89,22 @@ def createGlobalLogFile():
         logFile = open(globalLogPath, "w+")
         logFile.close()
 
-    # Json settings file
+    # Json settings filei
     if not os.path.exists(global_settings_path):
-        json_settings = json.dumps(settings)
+        json_settings = json.dumps(settings, indent=4)
 
         with open("settings.json", "w") as jsonfile:
             jsonfile.write(json_settings)
         jsonfile.close()
 
     # Json socketchat settings file
-    if not os.path.exists(global_settings_socketchat_path):
-        json_settings = json.dumps(socket_chat_settings)
+#    if not os.path.exists(global_settings_socketchat_path):
+#        json_settings = json.dumps(socket_chat_settings)
 
-        with open("settings_socketchat.json", "w") as jsonfile:
-            jsonfile.write(json_settings)
-        jsonfile.close()
-
+#        with open("settings_socketchat.json", "w") as jsonfile:
+#            jsonfile.write(json_settings)
+#        jsonfile.close()
+#
     # Master Global Latest Log File
     if os.path.exists(globalLatestLogPath):
         os.remove(globalLatestLogPath)
@@ -109,7 +112,9 @@ def createGlobalLogFile():
         logFile = open(globalLatestLogPath, "a+")
         logFile.close()
 
+
 createGlobalLogFile()
+
 
 def write_to_file(text_to_write, path_to_file, typeOfWrite):
     if os.path.exists(path_to_file):
@@ -118,11 +123,10 @@ def write_to_file(text_to_write, path_to_file, typeOfWrite):
         write_file.close()
 
 
-
 def get_lines(text_obj, output: bool):
     logo_lines = []
     if type(text_obj) == list:
-        for line in text_obj[random.randint(0, len(text_obj)-1)].split("\n"):
+        for line in text_obj[random.randint(0, len(text_obj) - 1)].split("\n"):
             logo_lines.append(line)
     else:
         for line in text_obj.split("\n"):
@@ -133,7 +137,9 @@ def get_lines(text_obj, output: bool):
             time.sleep(0.1)
             print(line)
 
+
 global reader
+
 
 def get_loc(ip):
     global reader
@@ -161,7 +167,6 @@ global logging
 
 
 def op3x_geolocate():
-
     createGlobalLogFile()
 
     usr_clr_sel = input("Would you like to clear previous session logs? [Y/y]\n")
@@ -251,7 +256,8 @@ def op3x_geolocate():
                 logging = False
                 time.sleep(1)
             elif data["log"] == True:
-                print("Logging Enabled in this session. All events will be logged to ´global.log´ and ´latest.log´ files.")
+                print(
+                    "Logging Enabled in this session. All events will be logged to ´global.log´ and ´latest.log´ files.")
                 time.sleep(1)
                 logging = True
             else:
@@ -273,7 +279,6 @@ def op3x_geolocate():
                 protocol = data["protocol_to_capture"]
         except Exception as e:
             raise
-
 
     cmd = f"sudo tshark -i {interfaceToCaptureOn}"
     print(f"---------------------- Capturing on {interfaceToCaptureOn}. ----------------------")
@@ -306,12 +311,12 @@ def op3x_geolocate():
     for line in iter(process.stdout.readline, b""):
         columns = str(line).split(" ")
 
-# CSGO P2P LOBBY VC--> CLASSIC-STUN or classicstun
+        # CSGO P2P LOBBY VC--> CLASSIC-STUN or classicstun
         # UDP SELECTED (DEFAULT IF NOT SPECIFIED)
 
         # Custom protocol
         # PROGRAM            # PROTOCOL
-        #if "TCP" in columns or "tcp" in columns:
+        # if "TCP" in columns or "tcp" in columns:
         if protocol in columns or protocol.lower() in columns:
             if "->" in columns:
                 src_ip = columns[columns.index("->") - 1]
@@ -437,7 +442,6 @@ def recvMsg():
             sys.exit()
 
 
-
 def socket_chat_outputPrint(lineBefore, msg, lineAfter):
     if platform == "linux":
         if lineBefore: prCyan("------------------------------------------------")
@@ -465,9 +469,9 @@ def op3x_socket_chat_client():
 
     socket_chat_outputPrint(True, f"{my_username} + has connected to the chatroom.", True)
 
+
 t1 = threading.Thread(target=recvMsg, name="t1")
 t2 = threading.Thread(target=sendMsg, name="t2")
-
 
 op3x_text = ["""
                       /$$$$$$                           /$$$$$$ 
@@ -498,24 +502,6 @@ u8888cJ888   uW888L  888' :@88N   '8888N  .u./"888&     X888  888X '888>  d8F   
                '8>                                                                        
                 "                                                                         
 """,
-             '''                             
-                          ad888888b,                                   ad88888ba  
-                         d8"     "88                                  d8"     "8b 
-                                 a88                                  88       88 
-                                ,88P                                  Y8a     a8P 
-                              aad8"                                    "Y8aaa8P"  
-   ,ggggg,    gg,gggg,        ""Y8,      ,gg,   ,gg  ,ggg,,ggg,,ggg,   ,d8"""8b,  
-  dP"  "Y8ggg I8P"  "Yb         `88b    d8""8b,dP"  ,8" "8P" "8P" "8, d8"     "8b 
- i8'    ,8I   I8'    ,8i         "88   dP   ,88"    I8   8I   8I   8I 88       88 
-,d8,   ,d8'  ,I8 _  ,d8' Y8,     a88 ,dP  ,dP"Y8,  ,dP   8I   8I   Yb,Y8a     a8P 
-P"Y8888P"    PI8 YY88888P "Y888888P' 8"  dP"   "Y888P'   8I   8I   `Y8 "Y88888P"  
-              I8                                                                  
-              I8                                                                  
-              I8                                                                  
-              I8                                                                  
-              I8                                                                  
-              I8                                                                  
-''',
              '''
                        .oooo.                                  .ooooo.   
                      .dP""Y88b                                d88'   `8. 
@@ -551,7 +537,6 @@ op3x_menu = '''
 
 
 def main():
-
     while True:
         clear()
         get_lines(op3x_text, True)
@@ -574,10 +559,9 @@ def main():
             t2.start()
             if not active:
                 if os.name in ('nt', 'dos'):
-                    os.kill(os.getpid(), signal.SIGINT) 
+                    os.kill(os.getpid(), signal.SIGINT)
                 else:
                     os._exit()
-
 
             input()
         elif usr_sel.lower() == "E" or usr_sel.lower() == "e" or usr_sel.lower() == "Q" or usr_sel.lower() == "q":
@@ -588,7 +572,7 @@ def main():
             exit(0)
 
         else:
-            print("Please Input A Valid Selection!")            
+            print("Please Input A Valid Selection!")
             time.sleep(1)
 
 
